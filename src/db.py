@@ -1,8 +1,9 @@
 import sqlite3
 import api
+import numpy as np
 import requests  # necessary isntall
 import pandas as pd #necessary install
-from matplotlib import pyplot, font_manager #necessary install
+from matplotlib import pyplot #necessary install
 
 
 class DataBase():
@@ -13,9 +14,12 @@ class DataBase():
         self.createTable()
         self.getData()
         self.getDataToDB()
+        self.insertInExcel()
         self.createGraph()
 
+
     def createTable(self):
+        print('Create table in DB')
         self.connect = sqlite3.connect('./db.db')
         self.cursor = self.connect.cursor()
         try:
@@ -24,6 +28,7 @@ class DataBase():
             print('Table already exists')
 
     def getData(self):
+        print('Call API')
         try:
             response = (requests.get(api.api['getIPCA'], verify=False)).json()
         except:
@@ -36,38 +41,54 @@ class DataBase():
             pass
 
     def getDataToDB(self):
+        print('Get data in DB')
         for row in self.cursor.execute('SELECT date, value FROM IPCA'):
             day, month, year = row[0].split('/')
             if self.dataDict.get(year):
-                self.dataDict[year] = self.dataDict[year] + round(float(row[1]),2)
+                self.dataDict[year] = self.dataDict[year] + float(row[1])
+                temp = '{:.2f}'.format(self.dataDict[year])
+                self.dataDict[year] = float(temp)
             else:
-                self.dataDict[year] = round(float(row[1]),2)
+                self.dataDict[year] = float(row[1])
 
-    def createGraph(self):
         self.date =  list(self.dataDict.keys())
         self.value = list(self.dataDict.values())
         self.tableData = list(self.dataDict.items())
 
-        
+    
+    def insertInExcel(self):
+        self.df = pd.DataFrame(self.tableData, columns=list(['YEAR','VALUE']))
+        print('Insert data in excel')
+        with pd.ExcelWriter('IPCA.xlsx') as writer:
+            self.df.to_excel(writer, sheet_name='IPCA analysis',index=False, header=False)
 
-        pyplot.figure('IPCA analysis',figsize=(4,2))
-        pyplot.subplot(1,2,1)
+    
+    def createGraph(self):
+        print('Create graph and table')
+        
+        pyplot.figure('IPCA analysis - Graph')
         pyplot.bar(self.date, self.value, color = 'blue', width = 0.6)
         pyplot.title('IPCA PER YEAR')
         pyplot.xlabel('YEARS')
         pyplot.ylabel('SUM IPCA')
         pyplot.xticks(range(0,42,5))
 
-        pyplot.subplot(1,2,2)
-        table = pyplot.table(cellText=self.tableData,loc='center')
-        table.set_fontsize(2)
-        table.scale(0.5,1)
-        pyplot.axis('off')
+        
+        fig, ax = pyplot.subplots(dpi=150, num="IPCA analysis - Table")
+        ccolors = np.full(len(self.value), 'lightcyan')
+        table = ax.table(
+            cellText=self.df.values,
+            colLabels=self.df.columns,
+            loc='center',
+            rowLoc='center',
+            cellLoc='center',
+            colColours=ccolors,
+        )
+        ax.axis('off')
+        table.scale(0.63, 0.63)
+        table.set_fontsize(6)
 
-        window = pyplot.get_current_fig_manager()
-        window.window.showMaximized()
         pyplot.show()
 
-
-        
+ 
 
