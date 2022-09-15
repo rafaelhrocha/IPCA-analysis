@@ -36,8 +36,8 @@ class DataBase():
             exit()
 
         for a in response:
-            # self.cursor.execute('INSERT INTO IPCA VALUES(?,?)', (a['data'], a['valor']))
-            # self.connect.commit()
+            self.cursor.execute('INSERT INTO IPCA VALUES(?,?)', (a['data'], a['valor']))
+            self.connect.commit()
             pass
 
     def getDataToDB(self):
@@ -65,15 +65,7 @@ class DataBase():
     
     def createGraph(self):
         print('Create graph and table')
-        
-        pyplot.figure('IPCA analysis - Graph')
-        pyplot.bar(self.date, self.value, color = 'blue', width = 0.6)
-        pyplot.title('IPCA PER YEAR')
-        pyplot.xlabel('YEARS')
-        pyplot.ylabel('SUM IPCA')
-        pyplot.xticks(range(0,42,5))
 
-        
         fig, ax = pyplot.subplots(dpi=150, num="IPCA analysis - Table")
         ccolors = np.full(len(self.value), 'lightcyan')
         table = ax.table(
@@ -87,6 +79,13 @@ class DataBase():
         ax.axis('off')
         table.scale(0.63, 0.63)
         table.set_fontsize(6)
+        
+        pyplot.figure('IPCA analysis - Graph')
+        pyplot.bar(self.date, self.value, color = 'blue', width = 0.6)
+        pyplot.title('IPCA PER YEAR')
+        pyplot.xlabel('YEARS')
+        pyplot.ylabel('SUM IPCA')
+        pyplot.xticks(range(0,42,5))
 
         pyplot.show()
 
